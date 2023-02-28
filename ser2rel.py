@@ -1,42 +1,149 @@
 #! /bin/python3
 import sys
 import time
+import tkinter as tk
 # package pyserial
 import serial
 from serial.tools import list_ports
 
 # configuration
-PORT = '/dev/ttyACM0'
+PORT = '/dev/ttyUSB0'
 BAUDRATE = 9600
-RELAY_COUNT = 4
+RELAYCOUNT = 4
 
-def print_ports():
-    # print list of serial ports
-    print("---------- PORTS ----------")
-    ports = list_ports.comports()
-    for p in ports:
-        print(p) 
+switch1_var = None
+switch2_var = None
+switch3_var = None
+switch4_var = None
+led1 = None
+led2 = None
+led3 = None
+led4 = None
+global ser
+ser = None
 
-def trigger_relay(ser, i):
+def trigger_relay(i):
     ser.write("t ".encode())
     ser.write(str(i).encode())
     ser.write(" ".encode())
 
+def turnon_relay(i):
+    ser.write("u ".encode())
+    ser.write(str(i).encode())
+    ser.write(" ".encode())
+
+def turnoff_relay(i):
+    ser.write("d ".encode())
+    ser.write(str(i).encode())
+    ser.write(" ".encode())
+
+
+def switch1_change():
+    if(switch1_var.get() == True):
+        turnon_relay(0)
+    else:
+        turnoff_relay(0)
+
+def switch2_change():
+    if(switch2_var.get() == True):
+        turnon_relay(1)
+    else:
+        turnoff_relay(1)
+
+def switch3_change():
+    if(switch3_var.get() == True):
+        turnon_relay(2)
+    else:
+        turnoff_relay(2)
+
+def switch4_change():
+    if(switch4_var.get() == True):
+        turnon_relay(3)
+    else:
+        turnoff_relay(3)
+
+def button1_click():
+    trigger_relay(0)
+
+def button2_click():
+    trigger_relay(1)
+
+def button3_click():
+    trigger_relay(2)
+
+def button4_click():
+    trigger_relay(3)
+
+def ledon(led):
+    led.delete()
+    led.create_oval(1, 1, 19, 19, fill="green", outline="black")
+
+def ledoff(led):
+    led.delete()
+    led.create_oval(1, 1, 19, 19, fill="grey", outline="black")
+
+def create_window():
+    root = tk.Tk()
+    root.title("SwitcherArduino")
+
+    global switch1_var
+    switch1_var = tk.BooleanVar()
+    global switch2_var
+    switch2_var = tk.BooleanVar()
+    global switch3_var
+    switch3_var = tk.BooleanVar()
+    global switch4_var
+    switch4_var = tk.BooleanVar()
+
+    switch1 = tk.Checkbutton(root, text="Switch 1", variable=switch1_var, command=switch1_change)
+    button1 = tk.Button(root, text="Reboot 1", command=button1_click)
+    switch2 = tk.Checkbutton(root, text="Switch 2", variable=switch2_var, command=switch2_change)
+    button2 = tk.Button(root, text="Reboot 2", command=button2_click)
+    switch3 = tk.Checkbutton(root, text="Switch 3", variable=switch3_var, command=switch3_change)
+    button3 = tk.Button(root, text="Reboot 3", command=button3_click)
+    switch4 = tk.Checkbutton(root, text="Switch 4", variable=switch4_var, command=switch4_change)
+    button4 = tk.Button(root, text="Reboot 4", command=button4_click)
+
+    global led1
+    led1 = tk.Canvas(root, width=20, height=20);
+    ledoff(led1)
+    global led2
+    led2 = tk.Canvas(root, width=20, height=20);
+    ledoff(led2)
+    global led3
+    led3 = tk.Canvas(root, width=20, height=20);
+    ledoff(led3)
+    global led4
+    led4 = tk.Canvas(root, width=20, height=20);
+    ledoff(led4)
+    
+    led1.grid(row=0, column=0, padx=2, pady=5)
+    switch1.grid(row=1, column=0, padx=2, pady=2)
+    button1.grid(row=2, column=0, padx=2, pady=2)
+    led2.grid(row=0, column=1, padx=2, pady=5)
+    switch2.grid(row=1, column=1, padx=2, pady=2)
+    button2.grid(row=2, column=1, padx=2, pady=2)
+    led3.grid(row=0, column=2, padx=2, pady=5)
+    switch3.grid(row=1, column=2, padx=2, pady=2)
+    button3.grid(row=2, column=2, padx=2, pady=2)
+    led4.grid(row=0, column=3, padx=2, pady=5)
+    switch4.grid(row=1, column=3, padx=2, pady=2)
+    button4.grid(row=2, column=3, padx=2, pady=2)
+    return root
+
 if __name__ == "__main__":
-    # get arguments
-    args = sys.argv
-
-    if "list" in args:
-        print_ports()
-
     # open port
-    ser = serial.Serial(PORT, BAUDRATE)
-    time.sleep(1)
-
-    # send trigger message if index is given
-    for i in range(RELAY_COUNT):
-        if str(i) in args:
-            trigger_relay(ser, i)
-
-    # close port
-    ser.close();
+    try:
+        ser = serial.Serial(PORT, BAUDRATE)
+        time.sleep(2)
+        # open window
+        root = create_window()
+        root.mainloop()
+        # close port
+        ser.close();
+    
+    except:
+        print("Serial port error, available ports:")
+        ports = list_ports.comports()
+        for p in ports:
+            print(p)
