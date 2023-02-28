@@ -1,6 +1,7 @@
 #! /bin/python3
 import sys
 import time
+import threading
 import tkinter as tk
 # package pyserial
 import serial
@@ -11,6 +12,7 @@ PORT = '/dev/ttyUSB0'
 BAUDRATE = 9600
 RELAYCOUNT = 4
 
+# global variables
 switch1_var = None
 switch2_var = None
 switch3_var = None
@@ -22,20 +24,31 @@ led4 = None
 global ser
 ser = None
 
+running = True
+
 def trigger_relay(i):
-    ser.write("t ".encode())
-    ser.write(str(i).encode())
-    ser.write(" ".encode())
+    try:
+        ser.write("t".encode())    
+        ser.write(str(i).encode())    
+        ser.write(" ".encode())
+    except:
+        print("Serial port write error")
 
 def turnon_relay(i):
-    ser.write("u ".encode())
-    ser.write(str(i).encode())
-    ser.write(" ".encode())
+    try:
+        ser.write("u".encode())    
+        ser.write(str(i).encode())    
+        ser.write(" ".encode())
+    except:
+        print("Serial port write error")
 
 def turnoff_relay(i):
-    ser.write("d ".encode())
-    ser.write(str(i).encode())
-    ser.write(" ".encode())
+    try:
+        ser.write("d".encode())    
+        ser.write(str(i).encode())    
+        ser.write(" ".encode())
+    except:
+        print("Serial port write error")
 
 
 def switch1_change():
@@ -131,11 +144,26 @@ def create_window():
     button4.grid(row=2, column=3, padx=2, pady=2)
     return root
 
+def read_serial():
+    while(True):
+        data = ser.readline().decode().strip()
+        print(data)
+        res = data.split(":")
+        if(res[1] == 1):
+            ledon(res[0])
+        else:
+            ledoff(res[0])
+
 if __name__ == "__main__":
     # open port
     try:
         ser = serial.Serial(PORT, BAUDRATE)
         time.sleep(2)
+
+        serial_thread = threading.Thread(target=read_serial)
+        serial_thread.daemon = True
+        serial_thread.start()
+
         # open window
         root = create_window()
         root.mainloop()
